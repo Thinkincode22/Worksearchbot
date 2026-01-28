@@ -1,0 +1,39 @@
+# Telegram Bot
+python-telegram-bot==20.7
+
+# aiogram==3.1.1
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.9  # Для PostgreSQL
+# або sqlite3 (вбудований в Python)
+
+# Парсинг
+beautifulsoup4==4.12.2
+lxml==4.9.3
+requests==2.31.0
+
+selenium==4.15.2  # Опціонально для JavaScript сайтів
+
+# Планувальник задач
+apscheduler==3.10.4
+
+# Утиліти
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Логування
+loguru==0.7.2
+
+# Тестування
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Кешування (опціонально)
+redis==5.0.1
+hiredis==2.2.3
+
+# Інші
+python-dateutil==2.8.2
