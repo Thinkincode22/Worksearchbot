@@ -97,7 +97,7 @@ remote: Create a pull request ...
 1. На сторінці боту вкладка **Environment**
 2. Натиснути **Add Environment Variable**
 3. **Key:** `TELEGRAM_BOT_TOKEN`
-4. **Value:** `8503931691:AAHCn6piqnLoudFzvzaC2IV1WAMqvrZa-cI`
+4. **Value:** (Твій токен з `.env` файлу - НЕ ПУБЛІКУВАТИ!)
 5. Натиснути **Save**
 
 ---

@@ -4,7 +4,7 @@
 
 1. **GitHub аккаунт** - [Зареєструйтеся тут](https://github.com/signup)
 2. **Render.com аккаунт** - [Зареєструйтеся тут](https://render.com)
-3. **Telegram Bot Token** - вже у тебе є: `8503931691:AAHCn6piqnLoudFzvzaC2IV1WAMqvrZa-cI`
+3. **Telegram Bot Token** - збережи в безпечному місці (у файлі `.env`, не комітьте!)
 
 ---
 
@@ -28,7 +28,7 @@ git add .
 git commit -m "Initial commit: WorkSearchBot setup"
 
 # Додаємо GitHub репозиторій (замінити на свій)
-git remote add origin https://github.com/YOUR_USERNAME/WorkSearchBot.git
+git remote add origin https://github.com/Thinkincode22/Worksearchbot.git
 git branch -M main
 git push -u origin main
 ```
@@ -72,7 +72,7 @@ git push -u origin main
 1. На сторінці бота натиснути **Environment**
 2. Додати змінну:
    - **Key:** `TELEGRAM_BOT_TOKEN`
-   - **Value:** `8503931691:AAHCn6piqnLoudFzvzaC2IV1WAMqvrZa-cI`
+   - **Value:** (Вставити твій токен з `.env` файлу - НЕ ПУБЛІКУВАТИ!)
 3. Натиснути **Save**
 
 ---
