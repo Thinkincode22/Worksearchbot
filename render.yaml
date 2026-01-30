@@ -17,7 +17,5 @@ services:
 
 databases:
   - name: worksearchbot-db
-    database: worksearchbot
     plan: free
-    primaryRegion: ohio
-    postgreSQLVersion: 15
+    region: ohio
