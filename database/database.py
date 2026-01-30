@@ -6,14 +6,18 @@ from .models import Base
 import os
 
 # Створюємо движок БД
-if settings.DATABASE_URL.startswith("sqlite"):
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+if db_url.startswith("sqlite"):
     engine = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
 else:
-    engine = create_engine(settings.DATABASE_URL)
+    engine = create_engine(db_url)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

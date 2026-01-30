@@ -28,12 +28,24 @@ from bot.handlers import (
 from bot.handlers.search import page_callback_handler
 from scraper.scheduler import ScrapingScheduler
 from loguru import logger
+import http.server
+import socketserver
+import threading
+import os
 
 # Налаштування логування
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=getattr(logging, settings.LOG_LEVEL)
+    level=logging.INFO
 )
+
+def run_health_server():
+    """Запускає простий HTTP-сервер для health check на Render"""
+    port = int(os.environ.get("PORT", 8000))
+    handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", port), handler) as httpd:
+        logger.info(f"Health server running on port {port}")
+        httpd.serve_forever()
 
 # Налаштування loguru
 logger.add(
@@ -110,6 +122,9 @@ def main():
     # Ініціалізуємо БД
     logger.info("Ініціалізація бази даних...")
     init_db()
+    
+    # Запускаємо health check сервер для Render у окремому потоці
+    threading.Thread(target=run_health_server, daemon=True).start()
     
     # Створюємо додаток з post_init та post_shutdown
     application = (
