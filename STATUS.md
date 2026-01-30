@@ -30,7 +30,7 @@
 
 ### Крок 1: GitHub (5 хв)
 ```bash
-cd /Users/denyssadovoi/Desktop/Projects/WorkSearchBot
+cd .
 
 # Ініціалізуємо git
 git init

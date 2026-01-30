@@ -20,7 +20,7 @@ git config --global init.defaultBranch main
 ## 📤 2. Завантажити проект на GitHub
 
 ```bash
-cd /Users/denyssadovoi/Desktop/Projects/WorkSearchBot
+cd .
 
 # Ініціалізуємо git
 git init

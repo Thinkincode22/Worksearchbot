@@ -20,7 +20,7 @@
 ### 1.2 Завантажити проект в локальному терміналі:
 
 ```bash
-cd /Users/denyssadovoi/Desktop/Projects/WorkSearchBot
+cd .
 
 # Ініціалізуємо git (якщо не було)
 git init
