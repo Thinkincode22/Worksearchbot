@@ -45,6 +45,8 @@ ENV/
 # Logs
 logs/
 *.log
+bot_output.log
+nohup.out
 
 # OS
 .DS_Store
