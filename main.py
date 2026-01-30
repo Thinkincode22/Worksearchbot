@@ -59,13 +59,8 @@ def run_health_server():
     except Exception as e:
         logger.error(f"Failed to start health check server: {e}")
 
-# Налаштування loguru
-logger.add(
-    settings.LOG_FILE,
-    rotation="10 MB",
-    retention="7 days",
-    level=settings.LOG_LEVEL
-)
+# Вимикаємо стандартні логи loguru до налаштування у main
+logger.remove()
 
 
 def setup_handlers(application: Application):
@@ -126,19 +121,35 @@ async def post_shutdown(application: Application):
 
 def main():
     """Головна функція"""
-    # Перевіряємо токен
+    # 1. Початкове логування у консоль
+    logging.info("Початок запуску бота...")
+
+    # 2. Відкриваємо порт для Render (Health Check) якнайшвидше
+    threading.Thread(target=run_health_server, daemon=True).start()
+
+    # 3. Створюємо папки та налаштовуємо логування
+    os.makedirs("logs", exist_ok=True)
+    logger.add(
+        settings.LOG_FILE,
+        rotation="10 MB",
+        retention="7 days",
+        level=settings.LOG_LEVEL
+    )
+
+    # 4. Перевіряємо токен
     if not settings.TELEGRAM_BOT_TOKEN:
-        logger.error("TELEGRAM_BOT_TOKEN не встановлено! Перевірте файл .env")
+        logger.error("TELEGRAM_BOT_TOKEN не встановлено! Бот не може запуститись.")
         return
     
-    # Ініціалізуємо БД
-    logger.info("Ініціалізація бази даних...")
-    init_db()
+    # 5. Ініціалізуємо БД
+    try:
+        logger.info("Ініціалізація бази даних...")
+        init_db()
+    except Exception as e:
+        logger.error(f"Критична помилка при ініціалізації БД: {e}")
+        # Не зупиняємось, можливо БД підніметься пізніше
     
-    # Запускаємо health check сервер для Render у окремому потоці
-    threading.Thread(target=run_health_server, daemon=True).start()
-    
-    # Створюємо додаток з post_init та post_shutdown
+    # 6. Створюємо додаток
     application = (
         Application.builder()
         .token(settings.TELEGRAM_BOT_TOKEN)
