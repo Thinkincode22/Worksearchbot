@@ -36,6 +36,15 @@ def init_db():
     # Створюємо папку для логів якщо не існує
     os.makedirs("logs", exist_ok=True)
     
-    # Створюємо всі таблиці
-    Base.metadata.create_all(bind=engine)
-    print("База даних ініціалізована успішно!")
+    # Визначаємо тип бази для логів (маскуємо пароль)
+    safe_url = db_url.split('@')[-1] if '@' in db_url else db_url
+    from loguru import logger
+    logger.info(f"Ініціалізація бази даних: {safe_url}")
+    
+    try:
+        # Створюємо всі таблиці
+        Base.metadata.create_all(bind=engine)
+        logger.info("База даних ініціалізована успішно!")
+    except Exception as e:
+        logger.error(f"Помилка ініціалізації бази даних: {e}")
+        raise e

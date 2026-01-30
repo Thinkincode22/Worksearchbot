@@ -39,13 +39,25 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+class HealthHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"OK")
+    
+    def log_message(self, format, *args):
+        return # Вимикаємо логи для health check
+
 def run_health_server():
     """Запускає простий HTTP-сервер для health check на Render"""
     port = int(os.environ.get("PORT", 8000))
-    handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("", port), handler) as httpd:
-        logger.info(f"Health server running on port {port}")
+    try:
+        httpd = http.server.HTTPServer(("0.0.0.0", port), HealthHandler)
+        logger.info(f"Health check server started on port {port}")
         httpd.serve_forever()
+    except Exception as e:
+        logger.error(f"Failed to start health check server: {e}")
 
 # Налаштування loguru
 logger.add(
@@ -139,7 +151,7 @@ def main():
     setup_handlers(application)
     
     # Запускаємо бота
-    logger.info("Запуск бота...")
+    logger.info("Бот готовий до роботи, запуск polling...")
     application.run_polling(
         allowed_updates=Update.ALL_TYPES,
         drop_pending_updates=True
