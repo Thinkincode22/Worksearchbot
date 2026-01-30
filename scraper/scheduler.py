@@ -19,7 +19,7 @@ class ScrapingScheduler:
     def __init__(self):
         self.scheduler = AsyncIOScheduler()
         self.scrapers = [
-            OLXScraper(),
+            # OLXScraper(),  # Тимчасово вимкнено за запитом
             # PracujScraper(),  # Тимчасово вимкнено через Cloudflare блокування
         ]
     
