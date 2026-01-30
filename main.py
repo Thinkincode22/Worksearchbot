@@ -7,6 +7,7 @@ from telegram.ext import (
     CommandHandler,
     MessageHandler,
     CallbackQueryHandler,
+    ContextTypes,
     filters
 )
 from config import settings
@@ -55,17 +56,23 @@ def setup_handlers(application: Application):
     application.add_handler(CommandHandler("subscriptions", subscriptions_handler))
     application.add_handler(CommandHandler("stats", stats_handler))
     
-    # Callback queries (кнопки)
+    # Callback queries (кнопки) - спочатку специфічні паттерни
+    application.add_handler(CallbackQueryHandler(page_callback_handler, pattern="^page_"))
     application.add_handler(CallbackQueryHandler(start_handler, pattern="^main_menu$"))
     application.add_handler(CallbackQueryHandler(search_handler, pattern="^search$"))
-    application.add_handler(CallbackQueryHandler(filters_handler, pattern="^filters$"))
-    application.add_handler(CallbackQueryHandler(filter_callback_handler))
-    application.add_handler(CallbackQueryHandler(favorites_handler, pattern="^favorites$"))
-    application.add_handler(CallbackQueryHandler(favorite_callback_handler))
-    application.add_handler(CallbackQueryHandler(subscriptions_handler, pattern="^subscriptions$"))
-    application.add_handler(CallbackQueryHandler(subscription_callback_handler))
     application.add_handler(CallbackQueryHandler(stats_handler, pattern="^stats$"))
-    application.add_handler(CallbackQueryHandler(page_callback_handler, pattern="^page_"))
+    
+    # Фільтри
+    application.add_handler(CallbackQueryHandler(filters_handler, pattern="^filters$"))
+    application.add_handler(CallbackQueryHandler(filter_callback_handler, pattern="^(filter_|city_|category_|employment_)"))
+    
+    # Улюблені
+    application.add_handler(CallbackQueryHandler(favorites_handler, pattern="^favorites$"))
+    application.add_handler(CallbackQueryHandler(favorite_callback_handler, pattern="^favorite_"))
+    
+    # Підписки
+    application.add_handler(CallbackQueryHandler(subscriptions_handler, pattern="^subscriptions$"))
+    application.add_handler(CallbackQueryHandler(subscription_callback_handler, pattern="^subscription_"))
     
     # Текстові повідомлення (пошук)
     application.add_handler(

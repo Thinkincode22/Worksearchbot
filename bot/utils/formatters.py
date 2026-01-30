@@ -33,8 +33,12 @@ def format_job_listing(job: JobListing) -> str:
         text += f"{EMOJIS['time']} Тип: {emp_type}\n"
     
     if job.published_date:
-        days_ago = (datetime.utcnow() - job.published_date).days
-        if days_ago == 0:
+        delta = datetime.utcnow() - job.published_date
+        days_ago = delta.days
+        
+        if days_ago < 0:
+            date_text = "щойно"
+        elif days_ago == 0:
             date_text = "сьогодні"
         elif days_ago == 1:
             date_text = "вчора"

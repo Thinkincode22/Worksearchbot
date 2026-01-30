@@ -13,31 +13,21 @@ def get_pagination_keyboard(
     keyboard = []
     
     # Кнопки навігації
-    nav_buttons = []
-    if page > 1:
-        nav_buttons.append(
+    if total_pages > 1:
+        # Робимо циклічну пагінацію
+        prev_page = page - 1 if page > 1 else total_pages
+        next_page = page + 1 if page < total_pages else 1
+        
+        nav_buttons = [
             InlineKeyboardButton(
                 f"{EMOJIS['back']} Попередня",
-                callback_data=f"page_{page - 1}"
-            )
-        )
-    
-    nav_buttons.append(
-        InlineKeyboardButton(
-            f"{page}/{total_pages}",
-            callback_data="page_info"
-        )
-    )
-    
-    if page < total_pages:
-        nav_buttons.append(
+                callback_data=f"page_{prev_page}"
+            ),
             InlineKeyboardButton(
                 f"Наступна {EMOJIS['next']}",
-                callback_data=f"page_{page + 1}"
+                callback_data=f"page_{next_page}"
             )
-        )
-    
-    if nav_buttons:
+        ]
         keyboard.append(nav_buttons)
     
     # Кнопки дій з вакансією

@@ -7,6 +7,7 @@ from config import settings
 from database.database import get_db
 from database.models import JobListing
 from scraper.scrapers.olx_scraper import OLXScraper
+from scraper.scrapers.pracuj_scraper import PracujScraper
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ class ScrapingScheduler:
         self.scheduler = AsyncIOScheduler()
         self.scrapers = [
             OLXScraper(),
-            # Тут можна додати інші скрапери
+            # PracujScraper(),  # Тимчасово вимкнено через Cloudflare блокування
         ]
     
     def start(self):
@@ -62,7 +63,7 @@ class ScrapingScheduler:
         logger.info(f"Скрапінг {scraper.source_name}...")
         
         # Отримуємо вакансії
-        jobs = scraper.fetch_jobs(max_pages=3)  # Обмежуємо кількість сторінок
+        jobs = scraper.fetch_jobs(max_pages=3)  # 3 сторінки = ~150 вакансій
         
         db_gen = get_db()
         db: Session = next(db_gen)

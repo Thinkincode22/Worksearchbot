@@ -15,8 +15,8 @@ async def filters_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник команди /filters та кнопки фільтрів"""
     query = update.callback_query or update.message
     
-    if hasattr(query, 'answer'):
-        await query.answer()
+    if update.callback_query:
+        await update.callback_query.answer()
     
     text = "⚙️ <b>Налаштування фільтрів</b>\n\nОберіть параметр для налаштування:"
     

@@ -28,6 +28,11 @@ class BaseScraper(ABC):
             try:
                 response = self.session.get(url, timeout=30)
                 response.raise_for_status()
+                
+                # Додаємо випадкову затримку щоб не блокували (2-5 секунд)
+                import random
+                time.sleep(random.uniform(2, 5))
+                
                 return response.text
             except Exception as e:
                 logger.warning(f"Помилка при отриманні {url} (спроба {attempt + 1}/{retries}): {e}")

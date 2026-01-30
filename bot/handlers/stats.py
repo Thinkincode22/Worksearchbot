@@ -1,7 +1,6 @@
 """Обробники статистики"""
 from telegram import Update
 from telegram.ext import ContextTypes
-from database.database import get_db
 from database.models import JobListing, User
 from bot.keyboards.main_menu import get_back_to_menu_keyboard
 from bot.utils.formatters import format_stats
@@ -14,8 +13,8 @@ async def stats_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник команди /stats та кнопки статистики"""
     query = update.callback_query or update.message
     
-    if hasattr(query, 'answer'):
-        await query.answer()
+    if update.callback_query:
+        await update.callback_query.answer()
     
     with get_db_session() as db:
         # Збираємо статистику

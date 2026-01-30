@@ -13,8 +13,8 @@ async def subscriptions_handler(update: Update, context: ContextTypes.DEFAULT_TY
     """Обробник команди /subscriptions та кнопки підписок"""
     query = update.callback_query or update.message
     
-    if hasattr(query, 'answer'):
-        await query.answer()
+    if update.callback_query:
+        await update.callback_query.answer()
     
     user_id = update.effective_user.id
     

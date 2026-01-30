@@ -14,8 +14,8 @@ async def favorites_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник команди /favorites та кнопки улюблених"""
     query = update.callback_query or update.message
     
-    if hasattr(query, 'answer'):
-        await query.answer()
+    if update.callback_query:
+        await update.callback_query.answer()
     
     user_id = update.effective_user.id
     
@@ -100,7 +100,11 @@ async def favorite_callback_handler(update: Update, context: ContextTypes.DEFAUL
         db_user = db.query(User).filter(User.telegram_id == user_id).first()
         
         if not db_user:
-            await query.answer("Помилка: користувач не знайдений")
+            await query.edit_message_text(
+                "❌ Помилка: користувач не знайдений",
+                reply_markup=get_back_to_menu_keyboard(),
+                parse_mode="HTML"
+            )
             return
         
         if data.startswith("favorite_add_"):

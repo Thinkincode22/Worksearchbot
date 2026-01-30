@@ -19,10 +19,33 @@ user_search_state = {}
 async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник команди /search та кнопки пошуку"""
     query = update.callback_query or update.message
+    user_id = update.effective_user.id
     
-    await query.answer()
+    if update.callback_query:
+        await update.callback_query.answer()
     
-    text = "🔍 <b>Пошук вакансій</b>\n\nВведіть ключові слова для пошуку або використайте фільтри."
+    with get_db_session() as db:
+        # Отримуємо 3 випадкові вакансії
+        from sqlalchemy.sql import func
+        jobs = db.query(JobListing).filter(JobListing.is_active == True).order_by(func.random()).limit(3).all()
+        
+        if jobs:
+            # Зберігаємо результати для пагінації
+            user_search_state[user_id] = {
+                "jobs": [job.id for job in jobs],
+                "current_page": 1,
+                "filters": {}
+            }
+            
+            # Показуємо першу вакансію
+            await show_job_page(update, context, user_id, 1)
+            
+            # Додаємо підказку про пошук (опціонально, можна окремим повідомленням)
+            # Але краще не спамити. Користувач побачить пагінацію 1/3.
+            return
+
+    # Якщо вакансій немає або помилка
+    text = "🔍 <b>Пошук вакансій</b>\n\nНа жаль, активних вакансій зараз немає. Спробуйте змінити фільтри або введіть запит вручну."
     
     if hasattr(query, 'edit_message_text'):
         await query.edit_message_text(
@@ -118,13 +141,36 @@ async def show_job_page(update: Update, context: ContextTypes.DEFAULT_TYPE, user
     state = user_search_state.get(user_id, {})
     job_ids = state.get("jobs", [])
     
+    if update.callback_query:
+        try:
+            await update.callback_query.answer()
+        except Exception:
+            pass # Ignore if already answered or too old
+
     if not job_ids:
-        await update.callback_query.answer("Немає результатів")
-        return
+        # Спробуємо відновити стан (наприклад, після перезапуску бота)
+        with get_db_session() as db:
+            from sqlalchemy.sql import func
+            jobs = db.query(JobListing).filter(JobListing.is_active == True).order_by(func.random()).limit(3).all()
+            if jobs:
+                job_ids = [job.id for job in jobs]
+                user_search_state[user_id] = {
+                    "jobs": job_ids,
+                    "current_page": 1,
+                    "filters": {}
+                }
+                total_pages = len(job_ids)
+                if page > total_pages:
+                    page = 1
+            else:
+                if update.callback_query:
+                    await update.callback_query.answer("Сесію пошуку завершено. Почніть новий пошук.")
+                return
     
     total_pages = len(job_ids)
     if page < 1 or page > total_pages:
-        await update.callback_query.answer("Невірна сторінка")
+        if update.callback_query:
+            await update.callback_query.answer("Невірна сторінка")
         return
     
     with get_db_session() as db:
@@ -132,7 +178,8 @@ async def show_job_page(update: Update, context: ContextTypes.DEFAULT_TYPE, user
         job = db.query(JobListing).filter(JobListing.id == job_id).first()
         
         if not job:
-            await update.callback_query.answer("Вакансія не знайдена")
+            if update.callback_query:
+                await update.callback_query.answer("Вакансія не знайдена")
             return
         
         # Перевіряємо чи в улюблених
@@ -152,22 +199,47 @@ async def show_job_page(update: Update, context: ContextTypes.DEFAULT_TYPE, user
         # Форматуємо та відправляємо
         text = format_job_listing(job)
         
-        await update.callback_query.edit_message_text(
-            text,
-            reply_markup=get_pagination_keyboard(page, total_pages, job.id, is_favorite),
-            parse_mode="HTML",
-            disable_web_page_preview=False
-        )
+        keyboard = get_pagination_keyboard(page, total_pages, job.id, is_favorite)
+        
+        # Handle message editing vs sending new message
+        if update.callback_query:
+             await update.callback_query.edit_message_text(
+                text,
+                reply_markup=keyboard,
+                parse_mode="HTML",
+                disable_web_page_preview=False
+            )
+        else:
+            # If triggered by text message (not callback), send existing message
+            await update.message.reply_text(
+                text,
+                reply_markup=keyboard,
+                parse_mode="HTML",
+                disable_web_page_preview=False
+            )
 
 
 async def page_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник пагінації"""
     query = update.callback_query
-    await query.answer()
     
     user_id = update.effective_user.id
     data = query.data
     
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Callback received: {data} from user {user_id}")
+    
+    if data == "page_info":
+        await query.answer("Використовуйте стрілки для навігації")
+        return
+        
+    await query.answer()
+    
     if data.startswith("page_"):
-        page_num = int(data.split("_")[1])
-        await show_job_page(update, context, user_id, page_num)
+        try:
+            page_num = int(data.split("_")[1])
+            await show_job_page(update, context, user_id, page_num)
+        except (ValueError, IndexError) as e:
+            logger.error(f"Error parsing page number from {data}: {e}")
+            await query.answer("Помилка пагінації")
