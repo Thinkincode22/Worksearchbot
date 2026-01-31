@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     MAX_REQUESTS_PER_MINUTE: int = int(os.getenv("MAX_REQUESTS_PER_MINUTE", "30"))
     MAX_REQUESTS_PER_HOUR: int = int(os.getenv("MAX_REQUESTS_PER_HOUR", "200"))
     
+    # Налаштування Webhook
+    USE_WEBHOOKS: bool = os.getenv("USE_WEBHOOKS", "False").lower() == "true"
+    WEBHOOK_URL: str = os.getenv("WEBHOOK_URL", "")
+    WEBHOOK_SECRET_TOKEN: str = os.getenv("WEBHOOK_SECRET_TOKEN", TELEGRAM_BOT_TOKEN) # Для безпеки
+    
     # User Agent для скраперів
     USER_AGENT: str = os.getenv(
         "USER_AGENT",

@@ -130,8 +130,11 @@ def main():
     # 1. Початкове логування у консоль
     logging.info("Початок запуску бота...")
 
-    # 2. Відкриваємо порт для Render (Health Check) якнайшвидше
-    threading.Thread(target=run_health_server, daemon=True).start()
+    # 2. Відкриваємо порт для Render (Health Check) якнайшвидше (тільки для Polling)
+    if not settings.USE_WEBHOOKS:
+        threading.Thread(target=run_health_server, daemon=True).start()
+    else:
+        logger.info("Webhook mode enabled: health check server will be handled by webhook port")
 
     # 3. Створюємо папки та налаштовуємо логування
     os.makedirs("logs", exist_ok=True)
@@ -178,24 +181,39 @@ def main():
     # Налаштовуємо обробники
     setup_handlers(application)
     
-    # Запускаємо бота з обробкою помилок мережі
-    logger.info("Бот готовий до роботи, запуск polling...")
-    
-    while True:
-        try:
-            application.run_polling(
-                allowed_updates=Update.ALL_TYPES,
-                drop_pending_updates=True,
-                close_loop=False # Важливо для рестарту
-            )
-        except Exception as e:
-            logger.error(f"⚠️ Критична помилка у циклі polling: {e}")
-            logger.info("Спроба перезапуску через 5 секунд...")
-            import time
-            time.sleep(5)
-        else:
-            # Якщо робота завершилась без помилок (наприклад, зупинка адміном)
-            break
+    # Запускаємо бота
+    if settings.USE_WEBHOOKS:
+        if not settings.WEBHOOK_URL:
+            logger.error("WEBHOOK_URL не встановлено! Використовуйте Polling або вкажіть URL.")
+            return
+            
+        logger.info(f"Запуск у режимі Webhook: {settings.WEBHOOK_URL}")
+        port = int(os.environ.get("PORT", 8000))
+        
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=port,
+            url_path=settings.WEBHOOK_SECRET_TOKEN,
+            webhook_url=f"{settings.WEBHOOK_URL}/{settings.WEBHOOK_SECRET_TOKEN}",
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True
+        )
+    else:
+        logger.info("Запуск у режимі Polling...")
+        while True:
+            try:
+                application.run_polling(
+                    allowed_updates=Update.ALL_TYPES,
+                    drop_pending_updates=True,
+                    close_loop=False # Важливо для рестарту
+                )
+            except Exception as e:
+                logger.error(f"⚠️ Критична помилка у циклі polling: {e}")
+                logger.info("Спроба перезапуску через 5 секунд...")
+                import time
+                time.sleep(5)
+            else:
+                break
 
 
 if __name__ == "__main__":
