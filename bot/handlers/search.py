@@ -25,23 +25,64 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.callback_query.answer()
     
     with get_db_session() as db:
-        # Отримуємо 3 випадкові вакансії
+        # Отримуємо фільтри користувача
+        state = user_search_state.get(user_id, {})
+        filters_dict = state.get("filters", {})
+        
+        # Формуємо запит до БД
+        db_query = db.query(JobListing).filter(JobListing.is_active == True)
+        
+        # Застосовуємо фільтри
+        if filters_dict.get("city"):
+            db_query = db_query.filter(JobListing.city == filters_dict["city"])
+        
+        if filters_dict.get("category"):
+            db_query = db_query.filter(JobListing.category == filters_dict["category"])
+        
+        if filters_dict.get("employment_type"):
+            db_query = db_query.filter(JobListing.employment_type == filters_dict["employment_type"])
+        
+        if filters_dict.get("salary_min"):
+            try:
+                s_min = float(filters_dict["salary_min"])
+                db_query = db_query.filter(
+                    or_(
+                        JobListing.salary_min >= s_min,
+                        JobListing.salary_max >= s_min
+                    )
+                )
+            except (ValueError, TypeError):
+                pass
+        
+        if filters_dict.get("keywords"):
+            kws = [k.strip() for k in filters_dict["keywords"].split(",") if k.strip()]
+            if kws:
+                kw_filters = []
+                for kw in kws:
+                    kw_filters.append(
+                        or_(
+                            JobListing.title.ilike(f"%{kw}%"),
+                            JobListing.description.ilike(f"%{kw}%")
+                        )
+                    )
+                db_query = db_query.filter(and_(*kw_filters))
+
+        # Отримуємо 3 випадкові (або просто перші) вакансії що відповідають фільтрам
         from sqlalchemy.sql import func
-        jobs = db.query(JobListing).filter(JobListing.is_active == True).order_by(func.random()).limit(3).all()
+        jobs = db_query.order_by(func.random()).limit(10).all() # Більше ніж 3 для кращого вибору
         
         if jobs:
             # Зберігаємо результати для пагінації
-            user_search_state[user_id] = {
+            if user_id not in user_search_state:
+                user_search_state[user_id] = {"filters": {}}
+            
+            user_search_state[user_id].update({
                 "jobs": [job.id for job in jobs],
-                "current_page": 1,
-                "filters": {}
-            }
+                "current_page": 1
+            })
             
             # Показуємо першу вакансію
             await show_job_page(update, context, user_id, 1)
-            
-            # Додаємо підказку про пошук (опціонально, можна окремим повідомленням)
-            # Але краще не спамити. Користувач побачить пагінацію 1/3.
             return
 
     # Якщо вакансій немає або помилка
@@ -67,13 +108,42 @@ async def search_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     query_text = update.message.text.strip()
     
     with get_db_session() as db:
-        # Отримуємо фільтри користувача (якщо є)
-        filters = user_search_state.get(user_id, {})
+        # Отримуємо стан
+        state = user_search_state.get(user_id, {"filters": {}})
         
+        # Перевіряємо чи це введення для фільтрів
+        waiting_for = state.get("waiting_for")
+        if waiting_for:
+            if waiting_for == "salary":
+                try:
+                    # Очищаємо текст від зайвого
+                    salary_str = "".join(filter(str.isdigit, query_text))
+                    if salary_str:
+                        state["filters"]["salary_min"] = float(salary_str)
+                        state.pop("waiting_for")
+                        await update.message.reply_text(
+                            f"✅ Мінімальну зарплату встановлено: {salary_str} PLN",
+                            reply_markup=get_back_to_menu_keyboard()
+                        )
+                        return
+                except ValueError:
+                    pass
+                await update.message.reply_text("❌ Будь ласка, введіть число (наприклад: 5000)")
+                return
+                
+            elif waiting_for == "keywords":
+                state["filters"]["keywords"] = query_text
+                state.pop("waiting_for")
+                await update.message.reply_text(
+                    f"✅ Ключові слова встановлено: {query_text}",
+                    reply_markup=get_back_to_menu_keyboard()
+                )
+                return
+
         # Формуємо запит до БД
         db_query = db.query(JobListing).filter(JobListing.is_active == True)
         
-        # Пошук за ключовими словами
+        # Пошук за ключовими словами з повідомлення
         if query_text:
             search_filter = or_(
                 JobListing.title.ilike(f"%{query_text}%"),
@@ -82,23 +152,36 @@ async def search_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             )
             db_query = db_query.filter(search_filter)
         
-        # Застосовуємо фільтри
-        if filters.get("city"):
-            db_query = db_query.filter(JobListing.city == filters["city"])
+        # Застосовуємо збережені фільтри
+        filters_dict = state.get("filters", {})
         
-        if filters.get("category"):
-            db_query = db_query.filter(JobListing.category == filters["category"])
+        if filters_dict.get("city"):
+            db_query = db_query.filter(JobListing.city == filters_dict["city"])
         
-        if filters.get("employment_type"):
-            db_query = db_query.filter(JobListing.employment_type == filters["employment_type"])
+        if filters_dict.get("category"):
+            db_query = db_query.filter(JobListing.category == filters_dict["category"])
         
-        if filters.get("salary_min"):
+        if filters_dict.get("employment_type"):
+            db_query = db_query.filter(JobListing.employment_type == filters_dict["employment_type"])
+        
+        if filters_dict.get("salary_min"):
+            s_min = filters_dict["salary_min"]
             db_query = db_query.filter(
                 or_(
-                    JobListing.salary_min >= filters["salary_min"],
-                    JobListing.salary_max >= filters["salary_min"]
+                    JobListing.salary_min >= s_min,
+                    JobListing.salary_max >= s_min
                 )
             )
+            
+        if filters_dict.get("keywords"):
+             kws = [k.strip() for k in filters_dict["keywords"].split(",") if k.strip()]
+             for kw in kws:
+                db_query = db_query.filter(
+                    or_(
+                        JobListing.title.ilike(f"%{kw}%"),
+                        JobListing.description.ilike(f"%{kw}%")
+                    )
+                )
         
         # Сортуємо за датою публікації
         db_query = db_query.order_by(JobListing.published_date.desc())
