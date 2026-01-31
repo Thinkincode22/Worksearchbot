@@ -62,6 +62,12 @@ def run_health_server():
 # Вимикаємо стандартні логи loguru до налаштування у main
 logger.remove()
 
+LOG_FORMAT = (
+    "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+    "<level>{level: <8}</level> | "
+    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+)
+
 
 def setup_handlers(application: Application):
     """Налаштовує обробники команд та повідомлень"""
@@ -129,12 +135,23 @@ def main():
 
     # 3. Створюємо папки та налаштовуємо логування
     os.makedirs("logs", exist_ok=True)
+    
+    # Налаштування логування у файл та консоль
     logger.add(
         settings.LOG_FILE,
         rotation="10 MB",
         retention="7 days",
-        level=settings.LOG_LEVEL
+        level=settings.LOG_LEVEL,
+        format=LOG_FORMAT
     )
+    
+    # Додаємо кольоровий вивід у консоль
+    import sys
+    logger.add(sys.stderr, format=LOG_FORMAT, level=settings.LOG_LEVEL)
+    
+    logger.info("="*50)
+    logger.info("🚀 ЗАПУСК НОВОЇ СЕСІЇ БОТА")
+    logger.info("="*50)
 
     # 4. Перевіряємо токен
     if not settings.TELEGRAM_BOT_TOKEN:
@@ -161,12 +178,24 @@ def main():
     # Налаштовуємо обробники
     setup_handlers(application)
     
-    # Запускаємо бота
+    # Запускаємо бота з обробкою помилок мережі
     logger.info("Бот готовий до роботи, запуск polling...")
-    application.run_polling(
-        allowed_updates=Update.ALL_TYPES,
-        drop_pending_updates=True
-    )
+    
+    while True:
+        try:
+            application.run_polling(
+                allowed_updates=Update.ALL_TYPES,
+                drop_pending_updates=True,
+                close_loop=False # Важливо для рестарту
+            )
+        except Exception as e:
+            logger.error(f"⚠️ Критична помилка у циклі polling: {e}")
+            logger.info("Спроба перезапуску через 5 секунд...")
+            import time
+            time.sleep(5)
+        else:
+            # Якщо робота завершилась без помилок (наприклад, зупинка адміном)
+            break
 
 
 if __name__ == "__main__":

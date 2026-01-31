@@ -19,7 +19,7 @@ class ScrapingScheduler:
     def __init__(self):
         self.scheduler = AsyncIOScheduler()
         self.scrapers = [
-            # OLXScraper(),  # Тимчасово вимкнено за запитом
+            OLXScraper(),  # Увімкнено для роботи
             # PracujScraper(),  # Тимчасово вимкнено через Cloudflare блокування
         ]
     
@@ -38,8 +38,32 @@ class ScrapingScheduler:
             replace_existing=True
         )
         
+        # Додаємо Self-Ping для запобігання сну на Render
+        if settings.RENDER_EXTERNAL_URL:
+            self.scheduler.add_job(
+                self.self_ping,
+                trigger=IntervalTrigger(minutes=10),
+                id='self_ping',
+                name='Self-ping to stay awake',
+                replace_existing=True
+            )
+            logger.info(f"Self-ping налаштовано на {settings.RENDER_EXTERNAL_URL}")
+        
         self.scheduler.start()
         logger.info(f"Планувальник скрапінгу запущено. Інтервал: {settings.SCRAPING_INTERVAL_MINUTES} хвилин")
+
+    async def self_ping(self):
+        """Пінгує власний URL для запобігання сну на Render"""
+        if not settings.RENDER_EXTERNAL_URL:
+            return
+            
+        import httpx
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(settings.RENDER_EXTERNAL_URL)
+                logger.info(f"Self-ping статус: {response.status_code}")
+        except Exception as e:
+            logger.error(f"Помилка Self-ping: {e}")
     
     def stop(self):
         """Зупиняє планувальник"""
@@ -69,6 +93,7 @@ class ScrapingScheduler:
         db: Session = next(db_gen)
         new_jobs_count = 0
         updated_jobs_count = 0
+        seen_urls = set()  # Уникальність в межах одного батчу
         
         try:
             for job_data in jobs:
@@ -76,12 +101,15 @@ class ScrapingScheduler:
                     # Парсимо деталі
                     normalized_job = scraper.parse_job(job_data)
                     
-                    if not normalized_job.get('url'):
+                    url = normalized_job.get('url')
+                    if not url or url in seen_urls:
                         continue
                     
-                    # Перевіряємо чи вже є така вакансія
+                    seen_urls.add(url)
+                    
+                    # Перевіряємо чи вже є така вакансія в БД
                     existing_job = db.query(JobListing).filter(
-                        JobListing.url == normalized_job['url']
+                        JobListing.url == url
                     ).first()
                     
                     if existing_job:

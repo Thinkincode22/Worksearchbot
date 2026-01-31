@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     MAX_REQUESTS_PER_MINUTE: int = int(os.getenv("MAX_REQUESTS_PER_MINUTE", "30"))
     MAX_REQUESTS_PER_HOUR: int = int(os.getenv("MAX_REQUESTS_PER_HOUR", "200"))
     
+    # Render External URL (for self-ping)
+    RENDER_EXTERNAL_URL: str = os.getenv("RENDER_EXTERNAL_URL", "")
+    
     # User Agent для скраперів
     USER_AGENT: str = os.getenv(
         "USER_AGENT",
