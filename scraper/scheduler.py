@@ -38,32 +38,8 @@ class ScrapingScheduler:
             replace_existing=True
         )
         
-        # Додаємо Self-Ping для запобігання сну на Render
-        if settings.RENDER_EXTERNAL_URL:
-            self.scheduler.add_job(
-                self.self_ping,
-                trigger=IntervalTrigger(minutes=10),
-                id='self_ping',
-                name='Self-ping to stay awake',
-                replace_existing=True
-            )
-            logger.info(f"Self-ping налаштовано на {settings.RENDER_EXTERNAL_URL}")
-        
         self.scheduler.start()
         logger.info(f"Планувальник скрапінгу запущено. Інтервал: {settings.SCRAPING_INTERVAL_MINUTES} хвилин")
-
-    async def self_ping(self):
-        """Пінгує власний URL для запобігання сну на Render"""
-        if not settings.RENDER_EXTERNAL_URL:
-            return
-            
-        import httpx
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(settings.RENDER_EXTERNAL_URL)
-                logger.info(f"Self-ping статус: {response.status_code}")
-        except Exception as e:
-            logger.error(f"Помилка Self-ping: {e}")
     
     def stop(self):
         """Зупиняє планувальник"""
