@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import List
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
@@ -64,13 +65,12 @@ class Settings(BaseSettings):
     def webhook_secret_token(self) -> str:
         """Повертає секретний токен для webhook з генерацією за замовчуванням"""
         import secrets
-        from loguru import logger
         
         token = os.getenv("WEBHOOK_SECRET_TOKEN")
         if not token:
             # Генеруємо випадковий токен якщо не вказано
             token = secrets.token_urlsafe(32)
-            logger.warning(
+            logging.warning(
                 "⚠️ WEBHOOK_SECRET_TOKEN не встановлено! Генеруємо новий токен.\n"
                 "Це спричинить проблеми з webhook після рестарту.\n"
                 f"Додайте до .env файлу: WEBHOOK_SECRET_TOKEN={token}"
