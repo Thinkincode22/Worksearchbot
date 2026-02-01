@@ -55,7 +55,10 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 pass
         
         if filters_dict.get("keywords"):
-            kws = [k.strip() for k in filters_dict["keywords"].split(",") if k.strip()]
+            MAX_KEYWORDS = 5
+            MAX_KEYWORD_LENGTH = 100
+            kws = [k.strip()[:MAX_KEYWORD_LENGTH] for k in filters_dict["keywords"].split(",") if k.strip()]
+            kws = kws[:MAX_KEYWORDS]  # Обмежуємо кількість ключових слів
             if kws:
                 kw_filters = []
                 for kw in kws:
@@ -106,6 +109,14 @@ async def search_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     """Обробник текстового запиту для пошуку"""
     user_id = update.effective_user.id
     query_text = update.message.text.strip()
+    
+    # Обмежуємо довжину запиту для безпеки
+    MAX_QUERY_LENGTH = 500
+    if len(query_text) > MAX_QUERY_LENGTH:
+        await update.message.reply_text(
+            f"❌ Запит занадто довгий. Максимальна довжина: {MAX_QUERY_LENGTH} символів."
+        )
+        return
     
     with get_db_session() as db:
         # Отримуємо стан
@@ -174,7 +185,10 @@ async def search_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             )
             
         if filters_dict.get("keywords"):
-             kws = [k.strip() for k in filters_dict["keywords"].split(",") if k.strip()]
+             MAX_KEYWORDS = 5
+             MAX_KEYWORD_LENGTH = 100
+             kws = [k.strip()[:MAX_KEYWORD_LENGTH] for k in filters_dict["keywords"].split(",") if k.strip()]
+             kws = kws[:MAX_KEYWORDS]  # Обмежуємо кількість ключових слів
              for kw in kws:
                 db_query = db_query.filter(
                     or_(
