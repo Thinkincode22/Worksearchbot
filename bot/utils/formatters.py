@@ -6,54 +6,21 @@ from config.constants import EMOJIS
 
 def format_job_listing(job: JobListing) -> str:
     """Форматує оголошення про роботу для відображення"""
-    text = f"{EMOJIS['company']} <b>{job.title}</b>\n\n"
+    # Заголовок вакансії
+    text = f"<b>{job.title}</b>\n\n"
     
-    if job.company:
-        text += f"{EMOJIS['company']} Компанія: {job.company}\n"
-    
+    # Місто з іконкою
     if job.city or job.location:
         location = job.city or job.location
-        text += f"{EMOJIS['location']} Місто: {location}\n"
+        text += f"📍 Місто: {location}\n\n"
     
-    if job.salary_min or job.salary_max:
-        salary_text = ""
-        if job.salary_min and job.salary_max:
-            salary_text = f"{job.salary_min:.0f} - {job.salary_max:.0f}"
-        elif job.salary_min:
-            salary_text = f"від {job.salary_min:.0f}"
-        elif job.salary_max:
-            salary_text = f"до {job.salary_max:.0f}"
-        
-        if salary_text:
-            text += f"{EMOJIS['salary']} Зарплата: {salary_text} {job.salary_currency}\n"
-    
-    if job.employment_type:
-        from config.constants import EMPLOYMENT_TYPES
-        emp_type = EMPLOYMENT_TYPES.get(job.employment_type, job.employment_type)
-        text += f"{EMOJIS['time']} Тип: {emp_type}\n"
-    
-    if job.published_date:
-        delta = datetime.utcnow() - job.published_date
-        days_ago = delta.days
-        
-        if days_ago < 0:
-            date_text = "щойно"
-        elif days_ago == 0:
-            date_text = "сьогодні"
-        elif days_ago == 1:
-            date_text = "вчора"
-        else:
-            date_text = f"{days_ago} днів тому"
-        text += f"{EMOJIS['date']} Опубліковано: {date_text}\n"
-    
+    # Опис з іконкою
     if job.description:
-        # Обрізаємо опис до 300 символів
-        description = job.description[:300]
-        if len(job.description) > 300:
+        # Обрізаємо опис до 400 символів для кращої читабельності
+        description = job.description[:400].strip()
+        if len(job.description) > 400:
             description += "..."
-        text += f"\n{EMOJIS['description']} Опис:\n{description}\n"
-    
-    text += f"\n{EMOJIS['link']} <a href='{job.url}'>Детальніше</a>"
+        text += f"📝 Опис:\n{description}\n"
     
     return text
 

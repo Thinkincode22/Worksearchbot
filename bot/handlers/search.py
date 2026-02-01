@@ -282,7 +282,7 @@ async def show_job_page(update: Update, context: ContextTypes.DEFAULT_TYPE, user
         # Форматуємо та відправляємо
         text = format_job_listing(job)
         
-        keyboard = get_pagination_keyboard(page, total_pages, job.id, is_favorite)
+        keyboard = get_pagination_keyboard(page, total_pages, job.id, is_favorite, job.url)
         
         # Handle message editing vs sending new message
         if update.callback_query:
