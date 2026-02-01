@@ -194,7 +194,7 @@ def main():
             listen="0.0.0.0",
             port=port,
             url_path=settings.WEBHOOK_SECRET_TOKEN,
-            webhook_url=f"{settings.WEBHOOK_URL}/{settings.WEBHOOK_SECRET_TOKEN}",
+            webhook_url=f"{settings.WEBHOOK_URL.rstrip('/')}/{settings.WEBHOOK_SECRET_TOKEN}",
             allowed_updates=Update.ALL_TYPES,
             drop_pending_updates=True
         )
