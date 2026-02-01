@@ -19,8 +19,8 @@ class ScrapingScheduler:
     def __init__(self):
         self.scheduler = AsyncIOScheduler()
         self.scrapers = [
-            OLXScraper(),  # Увімкнено для роботи
-            # PracujScraper(),  # Тимчасово вимкнено через Cloudflare блокування
+            OLXScraper(),
+            PracujScraper(),
         ]
     
     def start(self):
@@ -40,6 +40,10 @@ class ScrapingScheduler:
         
         self.scheduler.start()
         logger.info(f"Планувальник скрапінгу запущено. Інтервал: {settings.SCRAPING_INTERVAL_MINUTES} хвилин")
+        
+        # Запускаємо перший скрапінг відразу (асинхронно через обгортку)
+        import asyncio
+        asyncio.create_task(self.scrape_all())
     
     def stop(self):
         """Зупиняє планувальник"""
