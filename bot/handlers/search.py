@@ -191,7 +191,7 @@ async def search_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         
         # Зберігаємо результати для пагінації
         user_search_state[user_id] = {
-            **filters,
+            "filters": filters_dict,
             "jobs": [job.id for job in jobs],
             "current_page": 1
         }
@@ -202,7 +202,7 @@ async def search_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             search_history = SearchHistory(
                 user_id=db_user.id,
                 query=query_text,
-                filters=filters,
+                filters=filters_dict,
                 results_count=len(jobs)
             )
             db.add(search_history)
