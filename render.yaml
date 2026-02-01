@@ -3,6 +3,7 @@ services:
     name: worksearchbot
     runtime: python
     plan: free
+    region: ohio
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
