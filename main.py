@@ -23,7 +23,8 @@ from bot.handlers import (
     favorite_callback_handler,
     subscriptions_handler,
     subscription_callback_handler,
-    stats_handler
+    stats_handler,
+    update_jobs_handler
 )
 from bot.handlers.search import page_callback_handler
 from scraper.scheduler import ScrapingScheduler
@@ -80,6 +81,7 @@ def setup_handlers(application: Application):
     application.add_handler(CommandHandler("favorites", favorites_handler))
     application.add_handler(CommandHandler("subscriptions", subscriptions_handler))
     application.add_handler(CommandHandler("stats", stats_handler))
+    application.add_handler(CommandHandler("update_jobs", update_jobs_handler))
     
     # Callback queries (кнопки) - спочатку специфічні паттерни
     application.add_handler(CallbackQueryHandler(page_callback_handler, pattern="^page_"))

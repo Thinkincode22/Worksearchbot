@@ -29,21 +29,8 @@ class ScrapingScheduler:
             logger.info("Скрапінг вимкнено в налаштуваннях")
             return
         
-        # Додаємо задачу на періодичний скрапінг
-        self.scheduler.add_job(
-            self.scrape_all,
-            trigger=IntervalTrigger(minutes=settings.SCRAPING_INTERVAL_MINUTES),
-            id='scrape_jobs',
-            name='Scrape job listings',
-            replace_existing=True
-        )
-        
         self.scheduler.start()
         logger.info(f"Планувальник скрапінгу запущено. Інтервал: {settings.SCRAPING_INTERVAL_MINUTES} хвилин")
-        
-        # Запускаємо перший скрапінг відразу (асинхронно через обгортку)
-        import asyncio
-        asyncio.create_task(self.scrape_all())
     
     def stop(self):
         """Зупиняє планувальник"""
@@ -66,8 +53,9 @@ class ScrapingScheduler:
         """Скрапить одне джерело"""
         logger.info(f"Скрапінг {scraper.source_name}...")
         
-        # Отримуємо вакансії
-        jobs = scraper.fetch_jobs(max_pages=3)  # 3 сторінки = ~150 вакансій
+        import asyncio
+        # Отримуємо вакансії у окремому потоці, щоб не блокувати event loop
+        jobs = await asyncio.to_thread(scraper.fetch_jobs, max_pages=3)
         
         db_gen = get_db()
         db: Session = next(db_gen)
@@ -78,8 +66,8 @@ class ScrapingScheduler:
         try:
             for job_data in jobs:
                 try:
-                    # Парсимо деталі
-                    normalized_job = scraper.parse_job(job_data)
+                    # Парсимо деталі у окремому потоці
+                    normalized_job = await asyncio.to_thread(scraper.parse_job, job_data)
                     
                     url = normalized_job.get('url')
                     if not url or url in seen_urls:
