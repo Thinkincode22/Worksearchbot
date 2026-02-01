@@ -64,14 +64,18 @@ class Settings(BaseSettings):
     def webhook_secret_token(self) -> str:
         """Повертає секретний токен для webhook з генерацією за замовчуванням"""
         import secrets
+        from loguru import logger
+        
         token = os.getenv("WEBHOOK_SECRET_TOKEN")
         if not token:
             # Генеруємо випадковий токен якщо не вказано
             token = secrets.token_urlsafe(32)
+            logger.warning(
+                "⚠️ WEBHOOK_SECRET_TOKEN не встановлено! Генеруємо новий токен.\n"
+                "Це спричинить проблеми з webhook після рестарту.\n"
+                f"Додайте до .env файлу: WEBHOOK_SECRET_TOKEN={token}"
+            )
         return token
-    
-    # Deprecated: використовуйте webhook_secret_token property замість цього
-    WEBHOOK_SECRET_TOKEN: str = ""  # Буде ініціалізовано через property
     
     # User Agent для скраперів
     USER_AGENT: str = os.getenv(

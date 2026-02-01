@@ -11,6 +11,10 @@ from config.constants import MESSAGES
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 
+# Константи для обмеження пошуку (безпека)
+MAX_QUERY_LENGTH = 500
+MAX_KEYWORDS = 5
+MAX_KEYWORD_LENGTH = 100
 
 # Зберігаємо стан пошуку для кожного користувача
 user_search_state = {}
@@ -55,8 +59,6 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 pass
         
         if filters_dict.get("keywords"):
-            MAX_KEYWORDS = 5
-            MAX_KEYWORD_LENGTH = 100
             kws = [k.strip()[:MAX_KEYWORD_LENGTH] for k in filters_dict["keywords"].split(",") if k.strip()]
             kws = kws[:MAX_KEYWORDS]  # Обмежуємо кількість ключових слів
             if kws:
@@ -185,8 +187,6 @@ async def search_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             )
             
         if filters_dict.get("keywords"):
-             MAX_KEYWORDS = 5
-             MAX_KEYWORD_LENGTH = 100
              kws = [k.strip()[:MAX_KEYWORD_LENGTH] for k in filters_dict["keywords"].split(",") if k.strip()]
              kws = kws[:MAX_KEYWORDS]  # Обмежуємо кількість ключових слів
              for kw in kws:
