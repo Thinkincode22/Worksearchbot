@@ -5,39 +5,40 @@ from config.constants import EMOJIS
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     """Створює клавіатуру головного меню"""
-   keyboard = [
-    [
-        InlineKeyboardButton(
-            f"{EMOJIS['search']} Пошук вакансій",
-            callback_data="search"
-        )
-    ],
 
-    # Нижче — кнопки, які тимчасово приховані.
-    # Вони залишаються в коді, бо функціонал у розробці.
-    # Коли будемо готові — просто розкоментуємо.
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                f"{EMOJIS['search']} Пошук вакансій",
+                callback_data="search"
+            )
+        ],
 
-    # [
-    #     InlineKeyboardButton(
-    #         f"{EMOJIS['filters']} Фільтри",
-    #         callback_data="filters"
-    #     ),
-    #     InlineKeyboardButton(
-    #         f"{EMOJIS['favorites']} Улюблені",
-    #         callback_data="favorites"
-    #     )
-    # ],
-    # [
-    #     InlineKeyboardButton(
-    #         f"{EMOJIS['subscriptions']} Підписки",
-    #         callback_data="subscriptions"
-    #     ),
-    #     InlineKeyboardButton(
-    #         f"{EMOJIS['stats']} Статистика",
-    #         callback_data="stats"
-    #     )
-    # ]
-   ]
+        # Нижче — кнопки, які тимчасово приховані.
+        # Вони залишаються в коді, бо функціонал у розробці.
+        # Коли будемо готові — просто розкоментуємо.
+
+        # [
+        #     InlineKeyboardButton(
+        #         f"{EMOJIS['filters']} Фільтри",
+        #         callback_data="filters"
+        #     ),
+        #     InlineKeyboardButton(
+        #         f"{EMOJIS['favorites']} Улюблені",
+        #         callback_data="favorites"
+        #     )
+        # ],
+        # [
+        #     InlineKeyboardButton(
+        #         f"{EMOJIS['subscriptions']} Підписки",
+        #         callback_data="subscriptions"
+        #     ),
+        #     InlineKeyboardButton(
+        #         f"{EMOJIS['stats']} Статистика",
+        #         callback_data="stats"
+        #     )
+        # ]
+    ]
 
     return InlineKeyboardMarkup(keyboard)
 
