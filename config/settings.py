@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import List
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
@@ -26,10 +27,23 @@ class Settings(BaseSettings):
     
     @property
     def admin_ids_list(self) -> List[int]:
-        """Повертає список ID адмінів"""
+        """Повертає список ID адмінів з валідацією"""
         if not self.ADMIN_USER_IDS:
             return []
-        return [int(uid.strip()) for uid in self.ADMIN_USER_IDS.split(",") if uid.strip().isdigit()]
+        
+        result = []
+        for uid in self.ADMIN_USER_IDS.split(","):
+            uid = uid.strip()
+            if uid.isdigit():
+                try:
+                    user_id = int(uid)
+                    # Валідація діапазону Telegram ID (позитивні числа до 2^63)
+                    if 0 < user_id < 2**63:
+                        result.append(user_id)
+                except (ValueError, OverflowError):
+                    # Ігноруємо невалідні ID
+                    pass
+        return result
     
     # Scraping
     SCRAPING_INTERVAL_MINUTES: int = int(os.getenv("SCRAPING_INTERVAL_MINUTES", "60"))
@@ -46,7 +60,22 @@ class Settings(BaseSettings):
     # Налаштування Webhook
     USE_WEBHOOKS: bool = os.getenv("USE_WEBHOOKS", "False").lower() == "true"
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL", "")
-    WEBHOOK_SECRET_TOKEN: str = os.getenv("WEBHOOK_SECRET_TOKEN", TELEGRAM_BOT_TOKEN) # Для безпеки
+    
+    @property
+    def webhook_secret_token(self) -> str:
+        """Повертає секретний токен для webhook з генерацією за замовчуванням"""
+        import secrets
+        
+        token = os.getenv("WEBHOOK_SECRET_TOKEN")
+        if not token:
+            # Генеруємо випадковий токен якщо не вказано
+            token = secrets.token_urlsafe(32)
+            logging.warning(
+                "⚠️ WEBHOOK_SECRET_TOKEN не встановлено! Генеруємо новий токен.\n"
+                "Це спричинить проблеми з webhook після рестарту.\n"
+                f"Додайте до .env файлу: WEBHOOK_SECRET_TOKEN={token}"
+            )
+        return token
     
     # User Agent для скраперів
     USER_AGENT: str = os.getenv(
