@@ -19,7 +19,12 @@ class BaseScraper(ABC):
         self.base_url = base_url
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': settings.USER_AGENT
+            'User-Agent': settings.USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'max-age=0',
         })
     
     def fetch_page(self, url: str, retries: int = 3) -> Optional[str]:

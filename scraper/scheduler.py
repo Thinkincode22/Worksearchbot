@@ -2,9 +2,10 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from datetime import datetime
+import time
 import logging
 from config import settings
-from database.database import get_db
+from database.database import SessionLocal
 from database.models import JobListing
 from scraper.scrapers.olx_scraper import OLXScraper
 from scraper.scrapers.pracuj_scraper import PracujScraper
@@ -29,6 +30,15 @@ class ScrapingScheduler:
             logger.info("Скрапінг вимкнено в налаштуваннях")
             return
         
+        # Додаємо задачу скрапінгу до планувальника
+        self.scheduler.add_job(
+            self.scrape_all,
+            trigger=IntervalTrigger(minutes=settings.SCRAPING_INTERVAL_MINUTES),
+            id="scraping_job",
+            replace_existing=True,
+            max_instances=1  # Запобігає накладанню запусків
+        )
+        
         self.scheduler.start()
         logger.info(f"Планувальник скрапінгу запущено. Інтервал: {settings.SCRAPING_INTERVAL_MINUTES} хвилин")
     
@@ -39,6 +49,7 @@ class ScrapingScheduler:
     
     async def scrape_all(self):
         """Запускає скрапінг для всіх джерел"""
+        start_time = time.time()
         logger.info("Початок скрапінгу вакансій...")
         
         for scraper in self.scrapers:
@@ -47,22 +58,24 @@ class ScrapingScheduler:
             except Exception as e:
                 logger.error(f"Помилка при скрапінгу {scraper.source_name}: {e}")
         
-        logger.info("Скрапінг завершено")
+        elapsed = time.time() - start_time
+        logger.info(f"Скрапінг завершено за {elapsed:.1f} секунд")
     
     async def scrape_source(self, scraper):
         """Скрапить одне джерело"""
+        source_start = time.time()
         logger.info(f"Скрапінг {scraper.source_name}...")
         
         import asyncio
         # Отримуємо вакансії у окремому потоці, щоб не блокувати event loop
         jobs = await asyncio.to_thread(scraper.fetch_jobs, max_pages=3)
         
-        db_gen = get_db()
-        db: Session = next(db_gen)
         new_jobs_count = 0
         updated_jobs_count = 0
         seen_urls = set()  # Уникальність в межах одного батчу
         
+        # Використовуємо SessionLocal напряму з контекстним менеджером
+        db = SessionLocal()
         try:
             for job_data in jobs:
                 try:
@@ -98,13 +111,13 @@ class ScrapingScheduler:
                     continue
             
             db.commit()
+            elapsed = time.time() - source_start
             logger.info(
                 f"{scraper.source_name}: додано {new_jobs_count} нових, "
-                f"оновлено {updated_jobs_count} вакансій"
+                f"оновлено {updated_jobs_count} вакансій за {elapsed:.1f}с"
             )
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Помилка при роботі з БД для {scraper.source_name}: {e}")
         finally:
-            # Закриваємо сесію
-            try:
-                next(db_gen, None)
-            except StopIteration:
-                pass
+            db.close()
