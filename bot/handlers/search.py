@@ -69,7 +69,7 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Отримуємо 3 випадкові (або просто перші) вакансії що відповідають фільтрам
         from sqlalchemy.sql import func
-        jobs = db_query.order_by(func.random()).limit(10).all() # Більше ніж 3 для кращого вибору
+        jobs = db_query.order_by(func.random()).limit(50).all() # Більше ніж 3 для кращого вибору
         
         if jobs:
             # Зберігаємо результати для пагінації
@@ -234,7 +234,7 @@ async def show_job_page(update: Update, context: ContextTypes.DEFAULT_TYPE, user
         # Спробуємо відновити стан (наприклад, після перезапуску бота)
         with get_db_session() as db:
             from sqlalchemy.sql import func
-            jobs = db.query(JobListing).filter(JobListing.is_active == True).order_by(func.random()).limit(3).all()
+            jobs = db.query(JobListing).filter(JobListing.is_active == True).order_by(func.random()).limit(10).all()
             if jobs:
                 job_ids = [job.id for job in jobs]
                 user_search_state[user_id] = {

@@ -23,10 +23,6 @@ def get_pagination_keyboard(
                 callback_data=f"page_{prev_page}"
             ),
             InlineKeyboardButton(
-                f"📄 {page}/{total_pages}",
-                callback_data="page_info"
-            ),
-            InlineKeyboardButton(
                 "Наступна ➡️",
                 callback_data=f"page_{next_page}"
             )
