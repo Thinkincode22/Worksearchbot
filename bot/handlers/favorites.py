@@ -80,12 +80,27 @@ async def show_favorite_job(
         
         text = format_job_listing(job)
         
-        await update.callback_query.edit_message_text(
-            text,
-            reply_markup=get_pagination_keyboard(page, total_pages, job.id, is_favorite=True),
-            parse_mode="HTML",
-            disable_web_page_preview=False
-        )
+        if update.callback_query:
+            # Remove keyboard from the previous message
+            try:
+                await update.callback_query.edit_message_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            
+            # Send new message
+            await update.callback_query.message.reply_text(
+                text,
+                reply_markup=get_pagination_keyboard(page, total_pages, job.id, is_favorite=True),
+                parse_mode="HTML",
+                disable_web_page_preview=False
+            )
+        else:
+            await update.message.reply_text(
+                text,
+                reply_markup=get_pagination_keyboard(page, total_pages, job.id, is_favorite=True),
+                parse_mode="HTML",
+                disable_web_page_preview=False
+            )
 
 
 async def favorite_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

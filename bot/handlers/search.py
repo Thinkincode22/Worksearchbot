@@ -286,14 +286,21 @@ async def show_job_page(update: Update, context: ContextTypes.DEFAULT_TYPE, user
         
         # Handle message editing vs sending new message
         if update.callback_query:
-             await update.callback_query.edit_message_text(
+             # Remove keyboard from the previous message
+             try:
+                 await update.callback_query.edit_message_reply_markup(reply_markup=None)
+             except Exception:
+                 pass
+             
+             # Send new message instead of editing
+             await update.callback_query.message.reply_text(
                 text,
                 reply_markup=keyboard,
                 parse_mode="HTML",
                 disable_web_page_preview=False
             )
         else:
-            # If triggered by text message (not callback), send existing message
+            # If triggered by text message (not callback), send new message
             await update.message.reply_text(
                 text,
                 reply_markup=keyboard,
