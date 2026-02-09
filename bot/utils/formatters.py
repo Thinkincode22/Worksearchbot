@@ -4,10 +4,13 @@ from database.models import JobListing
 from config.constants import EMOJIS
 
 
-def format_job_listing(job: JobListing) -> str:
+def format_job_listing(job: JobListing, include_url: bool = True) -> str:
     """Форматує оголошення про роботу для відображення"""
-    # Заголовок вакансії
-    text = f"<b>{job.title}</b>\n\n"
+    # Заголовок вакансії як посилання (якщо є URL)
+    if include_url and job.url:
+        text = f'🔎 <a href="{job.url}"><b>{job.title}</b></a>\n\n'
+    else:
+        text = f"🔎 <b>{job.title}</b>\n\n"
     
     # Місто з іконкою
     if job.city or job.location:

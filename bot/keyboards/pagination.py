@@ -7,20 +7,10 @@ def get_pagination_keyboard(
     page: int,
     total_pages: int,
     job_id: int = None,
-    is_favorite: bool = False,
-    job_url: str = None
+    is_favorite: bool = False
 ) -> InlineKeyboardMarkup:
-    """Створює клавіатуру для пагінації та дій з вакансією"""
+    """Створює клавіатуру для пагінації"""
     keyboard = []
-    
-    # Кнопка "Детальніше" з посиланням
-    if job_url:
-        keyboard.append([
-            InlineKeyboardButton(
-                "🔗 Детальніше →",
-                url=job_url
-            )
-        ])
     
     # Навігація (тільки якщо є більше однієї сторінки)
     if total_pages > 1:
