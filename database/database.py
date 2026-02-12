@@ -31,13 +31,33 @@ def get_db() -> Session:
         db.close()
 
 
+def sanitize_db_url(url: str) -> str:
+    """Видаляє чутливу інформацію з URL бази даних"""
+    from urllib.parse import urlparse, urlunparse
+    
+    try:
+        parsed = urlparse(url)
+        # Якщо є пароль, замінюємо його на зірочки
+        if parsed.password:
+            netloc = f"{parsed.username}:***@{parsed.hostname}"
+            if parsed.port:
+                netloc += f":{parsed.port}"
+            sanitized = parsed._replace(netloc=netloc)
+            return urlunparse(sanitized)
+        # Якщо немає паролю, просто повертаємо частину після @
+        return url.split('@')[-1] if '@' in url else url
+    except Exception:
+        # У випадку помилки приховуємо все
+        return "***"
+
+
 def init_db():
     """Ініціалізувати БД (створити таблиці)"""
     # Створюємо папку для логів якщо не існує
     os.makedirs("logs", exist_ok=True)
     
-    # Визначаємо тип бази для логів (маскуємо пароль)
-    safe_url = db_url.split('@')[-1] if '@' in db_url else db_url
+    # Виводимо безпечний URL для логів
+    safe_url = sanitize_db_url(db_url)
     from loguru import logger
     logger.info(f"Ініціалізація бази даних: {safe_url}")
     
